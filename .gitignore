@@ -26,8 +26,14 @@ scratch/
 
 # Keep Asset & Upload Folders Tracked in Git
 !uploads/
+!uploads/**
 !admin/uploads/
+!admin/uploads/**
 !assets/
+!assets/**
 !assets/uploads/
+!assets/uploads/**
 !assets/uploads/logos/
+!assets/uploads/logos/**
 !assets/uploads/rackets/
+!assets/uploads/rackets/**
