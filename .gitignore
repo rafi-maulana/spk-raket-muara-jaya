@@ -1,0 +1,33 @@
+# ============================================================
+# .gitignore — Muara Jaya Sport SPK Raket
+# Security, System Clutter & Vercel Deployment Hygiene
+# ============================================================
+
+# Sensitive Environment Configurations
+.env
+.env.*
+!.env.example
+
+# OS & Desktop Clutter
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs & Temporary Files
+*.log
+*.tmp
+scratch/
+
+# Build & Tool Cache
+.gemini/
+.vscode/
+.idea/
+
+# Keep Asset & Upload Folders Tracked in Git
+!uploads/
+!admin/uploads/
+!assets/
+!assets/uploads/
+!assets/uploads/logos/
+!assets/uploads/rackets/
