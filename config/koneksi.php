@@ -9,12 +9,40 @@
  */
 
 // ── Konfigurasi Database (Mendukung Environment Variables TiDB / Vercel / Local) ──
-$dbHost    = getenv('DB_HOST')    ?: (defined('DB_HOST')    ? DB_HOST    : 'localhost');
-$dbPort    = getenv('DB_PORT')    ?: (defined('DB_PORT')    ? DB_PORT    : '3306');
-$dbName    = getenv('DB_NAME')    ?: (defined('DB_NAME')    ? DB_NAME    : 'spk_raket_db');
-$dbUser    = getenv('DB_USER')    ?: (defined('DB_USER')    ? DB_USER    : 'root');
-$dbPass    = getenv('DB_PASS') !== false ? getenv('DB_PASS') : (defined('DB_PASS') ? DB_PASS : '');
-$dbCharset = getenv('DB_CHARSET') ?: (defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4');
+$readEnv = function(string $key, ?string $default = null): ?string {
+    if (isset($_ENV[$key]) && (string)$_ENV[$key] !== '') {
+        return (string)$_ENV[$key];
+    }
+    if (isset($_SERVER[$key]) && (string)$_SERVER[$key] !== '') {
+        return (string)$_SERVER[$key];
+    }
+    $val = getenv($key);
+    if ($val !== false && (string)$val !== '') {
+        return (string)$val;
+    }
+    return $default;
+};
+
+$readDbPass = function() use ($readEnv): string {
+    if (array_key_exists('DB_PASS', $_ENV)) {
+        return (string)$_ENV['DB_PASS'];
+    }
+    if (array_key_exists('DB_PASS', $_SERVER)) {
+        return (string)$_SERVER['DB_PASS'];
+    }
+    $val = getenv('DB_PASS');
+    if ($val !== false) {
+        return (string)$val;
+    }
+    return defined('DB_PASS') ? (string)DB_PASS : '';
+};
+
+$dbHost    = $readEnv('DB_HOST', defined('DB_HOST') ? DB_HOST : 'localhost');
+$dbPort    = $readEnv('DB_PORT', defined('DB_PORT') ? (string)DB_PORT : '3306');
+$dbName    = $readEnv('DB_NAME', defined('DB_NAME') ? DB_NAME : 'spk_raket_db');
+$dbUser    = $readEnv('DB_USER', defined('DB_USER') ? DB_USER : 'root');
+$dbPass    = $readDbPass();
+$dbCharset = $readEnv('DB_CHARSET', defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4');
 
 if (!defined('DB_HOST'))    define('DB_HOST',    $dbHost);
 if (!defined('DB_PORT'))    define('DB_PORT',    (int)$dbPort);
@@ -38,17 +66,46 @@ try {
         PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
     ];
 
-    // Aktifkan SSL/TLS untuk Cloud Database (TiDB Cloud Serverless) jika DB_HOST bukan localhost
+    // Deteksi kebutuhan SSL/TLS: TiDB Cloud (port 4000 / tidbcloud.com) atau remote host
+    $isTiDB  = ((string)DB_PORT === '4000' || str_contains(strtolower(DB_HOST), 'tidbcloud.com'));
     $isLocal = in_array(strtolower(DB_HOST), ['localhost', '127.0.0.1', '::1'], true);
-    if (!$isLocal) {
-        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+
+    if ($isTiDB || !$isLocal) {
+        // Cari file CA certificate sistem Linux yang tersedia di lingkungan serverless/container
+        $caCandidates = [
+            '/etc/pki/tls/certs/ca-bundle.crt',
+            '/etc/ssl/certs/ca-certificates.crt',
+            '/etc/ssl/cert.pem'
+        ];
+        if (function_exists('openssl_get_cert_locations')) {
+            $locs = openssl_get_cert_locations();
+            if (!empty($locs['default_cert_file'])) {
+                $caCandidates[] = $locs['default_cert_file'];
+            }
+        }
+
+        $caPath = null;
+        foreach ($caCandidates as $candidate) {
+            if (file_exists($candidate) && is_readable($candidate)) {
+                $caPath = $candidate;
+                break;
+            }
+        }
+
+        if ($caPath !== null && defined('PDO::MYSQL_ATTR_SSL_CA')) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = $caPath;
+        }
+
+        if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+        }
     }
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     } catch (PDOException $pe) {
         // Fallback cerdas lokal: jika database spk_raket_db belum ada namun spk_raket tersedia pada localhost
-        if ($isLocal && empty(getenv('DB_NAME')) && (int)$pe->getCode() === 1049 && DB_NAME === 'spk_raket_db') {
+        if ($isLocal && empty($readEnv('DB_NAME')) && (int)$pe->getCode() === 1049 && DB_NAME === 'spk_raket_db') {
             $fallbackDsn = sprintf('mysql:host=%s;port=%d;dbname=%s;charset=%s', DB_HOST, DB_PORT, 'spk_raket', DB_CHARSET);
             $pdo = new PDO($fallbackDsn, DB_USER, DB_PASS, $options);
         } else {
@@ -88,9 +145,22 @@ if (!function_exists('getMySQLi')) {
     function getMySQLi(): mysqli|false {
         $conn = mysqli_init();
         if (!$conn) return false;
+        $isTiDB  = ((string)DB_PORT === '4000' || str_contains(strtolower(DB_HOST), 'tidbcloud.com'));
         $isLocal = in_array(strtolower(DB_HOST), ['localhost', '127.0.0.1', '::1'], true);
-        if (!$isLocal) {
-            mysqli_ssl_set($conn, NULL, NULL, NULL, NULL, NULL);
+        if ($isTiDB || !$isLocal) {
+            $caCandidates = [
+                '/etc/pki/tls/certs/ca-bundle.crt',
+                '/etc/ssl/certs/ca-certificates.crt',
+                '/etc/ssl/cert.pem'
+            ];
+            $caPath = null;
+            foreach ($caCandidates as $candidate) {
+                if (file_exists($candidate) && is_readable($candidate)) {
+                    $caPath = $candidate;
+                    break;
+                }
+            }
+            mysqli_ssl_set($conn, NULL, NULL, $caPath, NULL, NULL);
             $flags = MYSQLI_CLIENT_SSL;
         } else {
             $flags = 0;
