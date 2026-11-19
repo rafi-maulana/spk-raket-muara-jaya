@@ -75,6 +75,9 @@ $_SERVER['PHP_SELF']        = $uriPath;
 // Ubah working directory ke direktori file target agar seluruh require_once relatif berjalan mulus
 chdir(dirname($targetFile));
 
+// Pastikan browser merender halaman sebagai HTML, bukan mendownloadnya
+header('Content-Type: text/html; charset=UTF-8');
+
 // Eksekusi skrip target
 require $targetFile;
 exit;

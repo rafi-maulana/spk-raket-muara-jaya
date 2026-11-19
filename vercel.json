@@ -4,9 +4,9 @@
       "runtime": "vercel-php@0.7.3"
     }
   },
-  "rewrites": [
-    { "source": "/assets/:path*", "destination": "/assets/:path*" },
-    { "source": "/uploads/:path*", "destination": "/uploads/:path*" },
-    { "source": "/(.*)", "destination": "/api/index.php" }
+  "routes": [
+    { "src": "^/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "^/uploads/(.*)", "dest": "/uploads/$1" },
+    { "src": "^/(.*)", "dest": "/api/index.php" }
   ]
 }
