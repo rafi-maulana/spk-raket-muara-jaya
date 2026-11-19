@@ -1,15 +1,12 @@
 {
   "functions": {
-    "**/*.php": {
-      "runtime": "vercel-php@0.7.2"
+    "api/index.php": {
+      "runtime": "vercel-php@0.7.3"
     }
   },
-  "routes": [
-    { "src": "^/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "^/uploads/(.*)", "dest": "/uploads/$1" },
-    { "src": "^/admin/uploads/(.*)", "dest": "/admin/uploads/$1" },
-    { "src": "^/$", "dest": "/index.php" },
-    { "src": "^/admin/?$", "dest": "/admin/dashboard.php" },
-    { "src": "^/(.*\\.php)$", "dest": "/$1" }
+  "rewrites": [
+    { "source": "/assets/:path*", "destination": "/assets/:path*" },
+    { "source": "/uploads/:path*", "destination": "/uploads/:path*" },
+    { "source": "/(.*)", "destination": "/api/index.php" }
   ]
 }
