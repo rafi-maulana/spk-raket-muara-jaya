@@ -169,7 +169,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_store_se
 }
 
 // ── Statistik Dashboard ───────────────────────────────────────
-$totalRaket      = (int) $pdo->query("SELECT COUNT(*) FROM rackets")->fetchColumn();
+// Pastikan jika ada kolom status atau is_active, seluruh data raket (termasuk raket ke-21) disetel aktif
+try {
+    $racketCols = $pdo->query("SHOW COLUMNS FROM rackets")->fetchAll(PDO::FETCH_COLUMN);
+    if (in_array('is_active', $racketCols, true)) {
+        $pdo->exec("UPDATE rackets SET is_active = 1 WHERE is_active IS NULL OR is_active = 0");
+    }
+    if (in_array('status', $racketCols, true)) {
+        $pdo->exec("UPDATE rackets SET status = 'aktif' WHERE status IS NULL OR status = ''");
+    }
+} catch (Throwable $e) {}
+
+$totalRaket      = function_exists('getActiveRacketsCount') ? getActiveRacketsCount($pdo) : (int) $pdo->query("SELECT COUNT(*) FROM rackets")->fetchColumn();
 $totalKriteria   = (int) $pdo->query("SELECT COUNT(*) FROM criteria")->fetchColumn();
 $totalKonsultasi = (int) $pdo->query("SELECT COUNT(*) FROM consultation_log")->fetchColumn();
 
@@ -372,7 +383,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                 <div>
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Total Raket</span>
                     <div class="text-xl sm:text-2xl font-serif font-black text-slate-900 dark:text-white leading-tight mt-0.5"><?= $totalRaket ?></div>
-                    <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold block">20 Katalog Aktif</span>
+                    <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold block"><?= $totalRaket ?> Katalog Aktif</span>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>

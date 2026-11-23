@@ -174,7 +174,7 @@ $isAdmin       = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in'
             <div id="mobileMenuDrawerMetode" class="hidden md:hidden py-3 border-t border-slate-200 dark:border-slate-800 space-y-1">
                 <a href="index.php" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">← Beranda Utama</a>
                 <a href="index.php#konsultasi" class="block px-3 py-2 rounded-lg text-sm font-semibold text-teal-700 dark:text-cyan-400 font-bold bg-teal-500/10">Mulai Simulasi SPK</a>
-                <a href="index.php#katalog" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Katalog 20 Raket</a>
+                <a href="index.php#katalog" class="block px-3 py-2 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Koleksi Raket</a>
             </div>
         </div>
     </header>

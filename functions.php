@@ -293,6 +293,29 @@ function getCriteria(PDO $pdo): array
    STEP 2: AMBIL ALTERNATIF RAKET (+ FILTER ANGGARAN)
    ============================================================ */
 /**
+ * Menghitung jumlah katalog raket aktif secara dinamis dari database.
+ * Mendukung filter kolom is_active atau status jika tersedia di database.
+ *
+ * @param  PDO $pdo
+ * @return int
+ */
+function getActiveRacketsCount(PDO $pdo): int
+{
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM rackets")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('is_active', $cols, true)) {
+            return (int) $pdo->query("SELECT COUNT(*) FROM rackets WHERE is_active = 1 OR is_active IS NULL")->fetchColumn();
+        }
+        if (in_array('status', $cols, true)) {
+            return (int) $pdo->query("SELECT COUNT(*) FROM rackets WHERE status IN ('aktif', 'active', '1') OR status IS NULL OR status = ''")->fetchColumn();
+        }
+        return (int) $pdo->query("SELECT COUNT(*) FROM rackets")->fetchColumn();
+    } catch (Throwable $e) {
+        return 0;
+    }
+}
+
+/**
  * Mengambil data alternatif raket dengan filter anggaran opsional.
  *
  * @param  PDO        $pdo
@@ -301,6 +324,16 @@ function getCriteria(PDO $pdo): array
  */
 function getRackets(PDO $pdo, ?float $maxBudget = null): array
 {
+    $whereStatus = "";
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM rackets")->fetchAll(PDO::FETCH_COLUMN);
+        if (in_array('is_active', $cols, true)) {
+            $whereStatus = " AND (is_active = 1 OR is_active IS NULL)";
+        } elseif (in_array('status', $cols, true)) {
+            $whereStatus = " AND (status IN ('aktif', 'active', '1') OR status IS NULL OR status = '')";
+        }
+    } catch (Throwable $e) {}
+
     if ($maxBudget !== null && $maxBudget > 0) {
         $stmt = $pdo->prepare("
             SELECT id, name, brand, price,
@@ -309,11 +342,12 @@ function getRackets(PDO $pdo, ?float $maxBudget = null): array
                    weight_spec, balance_spec, flex_spec, tension_spec, grip_spec,
                    description, created_at
             FROM   rackets
-            WHERE  price <= :max_budget
+            WHERE  price <= :max_budget {$whereStatus}
             ORDER  BY price ASC, name ASC
         ");
         $stmt->execute([':max_budget' => $maxBudget]);
     } else {
+        $whereSql = !empty($whereStatus) ? "WHERE 1=1 {$whereStatus}" : "";
         $stmt = $pdo->prepare("
             SELECT id, name, brand, price,
                    COALESCE(gambar, image, '') AS gambar,
@@ -321,6 +355,7 @@ function getRackets(PDO $pdo, ?float $maxBudget = null): array
                    weight_spec, balance_spec, flex_spec, tension_spec, grip_spec,
                    description, created_at
             FROM   rackets
+            {$whereSql}
             ORDER  BY brand ASC, name ASC
         ");
         $stmt->execute();

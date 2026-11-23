@@ -249,12 +249,20 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
             // Pastikan kolom gambar bertipe MEDIUMTEXT agar muat menampung string Base64
             ensureImageColumnMediumText($pdo);
 
+            // Cek ketersediaan kolom status / is_active pada tabel rackets
+            $rCols = [];
+            try {
+                $rCols = $pdo->query("SHOW COLUMNS FROM rackets")->fetchAll(PDO::FETCH_COLUMN);
+            } catch (Throwable $e) {}
+            $hasIsActive = in_array('is_active', $rCols, true);
+            $hasStatus   = in_array('status', $rCols, true);
+
             try {
                 $pdo->beginTransaction();
 
                 if ($rid > 0) {
                     // UPDATE RAKET (update gambar dan image)
-                    $stmt = $pdo->prepare("
+                    $setSql = "
                         UPDATE rackets
                         SET name         = :name,
                             brand        = :brand,
@@ -266,9 +274,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
                             flex_spec    = :flex_spec,
                             tension_spec = :tension_spec,
                             grip_spec    = :grip_spec,
-                            description  = :desc
-                        WHERE id = :id
-                    ");
+                            description  = :desc";
+                    if ($hasIsActive) {
+                        $setSql .= ", is_active = 1";
+                    }
+                    if ($hasStatus) {
+                        $setSql .= ", status = 'aktif'";
+                    }
+                    $setSql .= " WHERE id = :id";
+
+                    $stmt = $pdo->prepare($setSql);
                     $stmt->execute([
                         ':name'        => $name,
                         ':brand'       => $brand,
@@ -285,13 +300,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
                     ]);
                 } else {
                     // INSERT RAKET BARU
-                    $stmt = $pdo->prepare("
-                        INSERT INTO rackets
-                        (name, brand, price, gambar, image, weight_spec, balance_spec, flex_spec, tension_spec, grip_spec, description)
-                        VALUES
-                        (:name, :brand, :price, :gambar, :image, :weight_spec, :balance_spec, :flex_spec, :tension_spec, :grip_spec, :desc)
-                    ");
-                    $stmt->execute([
+                    $fields = ['name', 'brand', 'price', 'gambar', 'image', 'weight_spec', 'balance_spec', 'flex_spec', 'tension_spec', 'grip_spec', 'description'];
+                    $vals   = [':name', ':brand', ':price', ':gambar', ':image', ':weight_spec', ':balance_spec', ':flex_spec', ':tension_spec', ':grip_spec', ':desc'];
+                    $params = [
                         ':name'        => $name,
                         ':brand'       => $brand,
                         ':price'       => $price,
@@ -303,7 +314,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
                         ':tension_spec'=> $tensionSpec,
                         ':grip_spec'   => $gripSpec,
                         ':desc'        => $desc,
-                    ]);
+                    ];
+                    if ($hasIsActive) {
+                        $fields[] = 'is_active';
+                        $vals[]   = '1';
+                    }
+                    if ($hasStatus) {
+                        $fields[] = 'status';
+                        $vals[]   = "'aktif'";
+                    }
+
+                    $sqlIns = "INSERT INTO rackets (" . implode(', ', $fields) . ") VALUES (" . implode(', ', $vals) . ")";
+                    $stmt = $pdo->prepare($sqlIns);
+                    $stmt->execute($params);
                     $rid = (int)$pdo->lastInsertId();
                 }
 
@@ -378,6 +401,17 @@ if ($action === 'edit' && $editId > 0) {
 }
 
 // ── DATA LIST TABEL RAKET ─────────────────────────────────────
+// Pastikan jika ada kolom status atau is_active, seluruh raket (termasuk raket ke-21) disetel aktif
+try {
+    $chkCols = $pdo->query("SHOW COLUMNS FROM rackets")->fetchAll(PDO::FETCH_COLUMN);
+    if (in_array('is_active', $chkCols, true)) {
+        $pdo->exec("UPDATE rackets SET is_active = 1 WHERE is_active IS NULL OR is_active = 0");
+    }
+    if (in_array('status', $chkCols, true)) {
+        $pdo->exec("UPDATE rackets SET status = 'aktif' WHERE status IS NULL OR status = ''");
+    }
+} catch (Throwable $e) {}
+
 $rackets = $pdo->query("
     SELECT r.*,
            COUNT(rs.id) AS score_count
