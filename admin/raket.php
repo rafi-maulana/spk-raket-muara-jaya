@@ -38,8 +38,11 @@ function resolveAdminAsset(?string $path): string {
     if (empty($path)) {
         return '../assets/images/fallback-racket.svg';
     }
-    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+    if (str_starts_with($path, 'data:') || str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
         return $path;
+    }
+    if (str_starts_with($path, 'admin/uploads/')) {
+        $path = substr($path, strlen('admin/uploads/'));
     }
     if (file_exists(__DIR__ . '/uploads/' . $path)) {
         return 'uploads/' . $path;
@@ -177,26 +180,59 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
                                 @mkdir($uploadDir, 0755, true);
                             }
 
-                            // Cek jika direktori read-only (Serverless Vercel Compatibility)
-                            if (!is_writable($uploadDir)) {
-                                error_log('[SERVERLESS NOTICE] Direktori upload ' . $uploadDir . ' bersifat read-only. Upload dilewati tanpa memunculkan warning.');
-                                $finalImagePath = $oldImage; // Pertahankan file lama dengan aman
-                            } else {
-                                // Penamaan acak aman menggunakan bin2hex(random_bytes(8))
-                                $newFileName = 'racket_' . bin2hex(random_bytes(8)) . '.' . $ext;
-                                $targetPath  = $uploadDir . $newFileName;
+                            $isServerless = !empty(getenv('VERCEL')) || !empty($_ENV['VERCEL']) || !empty($_SERVER['VERCEL']) || !is_writable($uploadDir);
 
-                                if (@move_uploaded_file($_FILES['racket_file']['tmp_name'], $targetPath)) {
-                                    // Hapus file lama jika ada
-                                    if (!empty($oldImage)) {
-                                        $oldFile = $uploadDir . $oldImage;
-                                        if (file_exists($oldFile) && is_file($oldFile)) {
-                                            @unlink($oldFile);
+                            if ($mime === 'application/pdf' || $ext === 'pdf') {
+                                if ($isServerless) {
+                                    $pdfContent = @file_get_contents($_FILES['racket_file']['tmp_name']);
+                                    if ($pdfContent !== false) {
+                                        $finalImagePath = 'data:application/pdf;base64,' . base64_encode($pdfContent);
+                                    } else {
+                                        $error = 'Gagal membaca data file PDF yang diunggah.';
+                                    }
+                                } else {
+                                    $newFileName = 'racket_' . bin2hex(random_bytes(8)) . '.pdf';
+                                    $targetPath  = $uploadDir . $newFileName;
+                                    if (@move_uploaded_file($_FILES['racket_file']['tmp_name'], $targetPath)) {
+                                        if (!empty($oldImage) && !str_starts_with($oldImage, 'data:') && !str_starts_with($oldImage, 'http')) {
+                                            $oldFile = $uploadDir . $oldImage;
+                                            if (file_exists($oldFile) && is_file($oldFile)) @unlink($oldFile);
+                                        }
+                                        $finalImagePath = $newFileName;
+                                    } else {
+                                        $pdfContent = @file_get_contents($_FILES['racket_file']['tmp_name']);
+                                        if ($pdfContent !== false) {
+                                            $finalImagePath = 'data:application/pdf;base64,' . base64_encode($pdfContent);
+                                        } else {
+                                            $error = 'Gagal menyimpan file PDF upload ke server.';
                                         }
                                     }
-                                    $finalImagePath = $newFileName;
+                                }
+                            } else {
+                                // Kompres dan resize gambar dengan GD (maksimal lebar 800px proporsional, JPEG kualitas 75)
+                                $compResult = processAndCompressImage($_FILES['racket_file']['tmp_name'], 800, 75);
+                                if (!$compResult['success']) {
+                                    $error = $compResult['error'] ?? 'Gagal memproses dan mengompres gambar upload.';
                                 } else {
-                                    $error = 'Gagal menyimpan file upload ke folder admin/uploads. Periksa hak akses folder.';
+                                    if ($isServerless) {
+                                        // Serverless Vercel / read-only: Simpan langsung sebagai Base64 Data URI ke database
+                                        $finalImagePath = $compResult['base64'];
+                                    } else {
+                                        // Localhost XAMPP yang writable: simpan file fisik JPEG terkompresi
+                                        $newFileName = 'racket_' . bin2hex(random_bytes(8)) . '.jpg';
+                                        $targetPath  = $uploadDir . $newFileName;
+
+                                        if (@file_put_contents($targetPath, $compResult['binary']) !== false) {
+                                            if (!empty($oldImage) && !str_starts_with($oldImage, 'data:') && !str_starts_with($oldImage, 'http')) {
+                                                $oldFile = $uploadDir . $oldImage;
+                                                if (file_exists($oldFile) && is_file($oldFile)) @unlink($oldFile);
+                                            }
+                                            $finalImagePath = $newFileName;
+                                        } else {
+                                            // Fallback otomatis ke Base64 jika penulisan disk gagal
+                                            $finalImagePath = $compResult['base64'];
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -210,6 +246,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
 
         // Jika tidak ada error upload, lanjutkan simpan database
         if (empty($error)) {
+            // Pastikan kolom gambar bertipe MEDIUMTEXT agar muat menampung string Base64
+            ensureImageColumnMediumText($pdo);
+
             try {
                 $pdo->beginTransaction();
 
@@ -548,7 +587,7 @@ $rackets = $pdo->query("
             $rTensionSpec = $editRacket['tension_spec'] ?? '28-30 lbs';
             $rGripSpec    = $editRacket['grip_spec']    ?? 'G5';
             $rDesc        = $editRacket['description']  ?? '';
-            $isPdf        = !empty($rImage) && str_ends_with(strtolower($rImage), '.pdf');
+            $isPdf        = !empty($rImage) && (str_ends_with(strtolower($rImage), '.pdf') || str_starts_with($rImage, 'data:application/pdf'));
         ?>
         <form action="raket.php" method="POST" enctype="multipart/form-data" class="space-y-6">
             <input type="hidden" name="save_raket" value="1">
@@ -608,7 +647,7 @@ $rackets = $pdo->query("
                             </a>
                         <?php else: ?>
                             <img src="<?= resolveAdminAsset($rImage) ?>" alt="Preview" class="w-12 h-12 object-cover rounded-lg border border-slate-200 dark:border-slate-700">
-                            <span class="text-xs font-mono text-slate-600 dark:text-slate-300"><?= h($rImage) ?></span>
+                            <span class="text-xs font-mono text-slate-600 dark:text-slate-300"><?= str_starts_with($rImage, 'data:') ? 'Gambar Tersemat (Base64)' : h($rImage) ?></span>
                         <?php endif; ?>
                     </div>
                     <label class="flex items-center gap-2 text-xs text-rose-500 cursor-pointer">
@@ -713,7 +752,7 @@ $rackets = $pdo->query("
                 <table class="w-full text-left text-xs whitespace-nowrap">
                     <thead class="bg-slate-100 dark:bg-slate-800/80 font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700 uppercase tracking-wider text-[11px]">
                         <tr>
-                            <th class="py-3.5 px-4 text-center">ID</th>
+                            <th class="py-3.5 px-4 text-center">No</th>
                             <th class="py-3.5 px-4 text-center">Visual</th>
                             <th class="py-3.5 px-4 sticky left-0 bg-slate-100 dark:bg-slate-800 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.08)] min-w-[130px]">Nama Raket</th>
                             <th class="py-3.5 px-4">Brand</th>
@@ -724,15 +763,17 @@ $rackets = $pdo->query("
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
-                        <?php foreach ($rackets as $r):
+                        <?php 
+                        $no = 1;
+                        foreach ($rackets as $r):
                             $rImg   = $r['gambar'] ?: ($r['image'] ?? '');
-                            $isPdf  = !empty($rImg) && str_ends_with(strtolower($rImg), '.pdf');
+                            $isPdf  = !empty($rImg) && (str_ends_with(strtolower($rImg), '.pdf') || str_starts_with($rImg, 'data:application/pdf'));
                             $rPrice = (float)$r['price'];
                         ?>
                         <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                            <!-- ID -->
+                            <!-- Nomor Urut Berurutan -->
                             <td class="py-3.5 px-4 text-center font-bold text-slate-400">
-                                <?= $r['id'] ?>
+                                <?= $no++ ?>
                             </td>
 
                             <!-- Visual Thumbnail -->

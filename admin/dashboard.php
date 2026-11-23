@@ -94,32 +94,39 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_store_se
 
             if (!in_array($mime, $allowedMimes, true) || !in_array($ext, ['png', 'jpg', 'jpeg', 'webp'], true)) {
                 $settingsError = 'Format file logo harus berupa PNG, JPG, JPEG, atau WEBP.';
-            } elseif ($_FILES['logo_file']['size'] > 3 * 1024 * 1024) {
-                $settingsError = 'Ukuran file logo maksimal 3 MB.';
+            } elseif ($_FILES['logo_file']['size'] > 5 * 1024 * 1024) {
+                $settingsError = 'Ukuran file logo maksimal 5 MB.';
             } else {
                 $uploadDir = __DIR__ . '/../assets/uploads/logos/';
                 if (!is_dir($uploadDir)) {
                     @mkdir($uploadDir, 0755, true);
                 }
 
-                if (!is_writable($uploadDir)) {
-                    // Proteksi lingkungan serverless read-only filesystem (misal: Vercel)
-                    $settingsError = 'Direktori penyimpanan logo bersifat read-only pada environment serverless ini. Teks pengaturan toko tetap dapat disimpan tanpa memperbarui file logo.';
-                } else {
-                    $newLogoName = 'logo_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                    $targetFile  = $uploadDir . $newLogoName;
+                $isServerless = !empty(getenv('VERCEL')) || !empty($_ENV['VERCEL']) || !empty($_SERVER['VERCEL']) || !is_writable($uploadDir);
 
-                    if (@move_uploaded_file($_FILES['logo_file']['tmp_name'], $targetFile)) {
-                        // Hapus logo lama jika ada
-                        if (!empty($logoPath) && str_starts_with($logoPath, 'assets/uploads/logos/')) {
-                            $oldF = __DIR__ . '/../' . $logoPath;
-                            if (file_exists($oldF) && is_file($oldF)) {
-                                @unlink($oldF);
-                            }
-                        }
-                        $logoPath = 'assets/uploads/logos/' . $newLogoName;
+                // Kompresi dan resize logo dengan GD (maksimal lebar 800px proporsional, JPEG kualitas 75)
+                $compResult = processAndCompressImage($_FILES['logo_file']['tmp_name'], 800, 75);
+                if (!$compResult['success']) {
+                    $settingsError = $compResult['error'] ?? 'Gagal memproses file logo.';
+                } else {
+                    if ($isServerless) {
+                        // Simpan permanen sebagai Base64 Data URI di database TiDB Cloud
+                        $logoPath = $compResult['base64'];
                     } else {
-                        $settingsError = 'Gagal menyimpan file logo ke folder server.';
+                        $newLogoName = 'logo_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.jpg';
+                        $targetFile  = $uploadDir . $newLogoName;
+
+                        if (@file_put_contents($targetFile, $compResult['binary']) !== false) {
+                            if (!empty($logoPath) && str_starts_with($logoPath, 'assets/uploads/logos/')) {
+                                $oldF = __DIR__ . '/../' . $logoPath;
+                                if (file_exists($oldF) && is_file($oldF)) {
+                                    @unlink($oldF);
+                                }
+                            }
+                            $logoPath = 'assets/uploads/logos/' . $newLogoName;
+                        } else {
+                            $logoPath = $compResult['base64'];
+                        }
                     }
                 }
             }
@@ -286,7 +293,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                 <!-- Brand & Portal Badge -->
                 <div class="flex items-center gap-3">
                     <?php if (!empty($storeSettings['logo'])): ?>
-                        <img src="../<?= h($storeSettings['logo']) ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
+                        <img src="<?= h(resolveStoreLogo($storeSettings['logo'], '../')) ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
                     <?php else: ?>
                         <div class="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-serif font-black text-xs text-teal-600 dark:text-cyan-400">
                             MJ
@@ -519,7 +526,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                         <?php if (!empty($storeSettings['logo'])): ?>
                         <div class="flex items-center gap-2.5">
                             <span class="text-xs text-slate-500 dark:text-slate-400">Logo Aktif:</span>
-                            <img src="../<?= h($storeSettings['logo']) ?>" alt="Logo Toko" class="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-white/5 p-1 shadow-xs">
+                            <img src="<?= h(resolveStoreLogo($storeSettings['logo'], '../')) ?>" alt="Logo Toko" class="w-10 h-10 object-contain rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-white/5 p-1 shadow-xs">
                         </div>
                         <?php endif; ?>
                     </div>

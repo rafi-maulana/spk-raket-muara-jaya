@@ -75,7 +75,7 @@ $storeLogo       = $storeSettings['logo'] ?? '';
             <!-- Brand Logo & Name (Tampil Utuh Tanpa Terpotong) -->
             <a href="<?= $basePath ?? '' ?>index.php" class="flex items-center gap-2.5 sm:gap-3 group min-w-0 shrink">
                 <?php if (!empty($storeLogo)): ?>
-                    <img src="<?= $basePath ?? '' ?><?= htmlspecialchars($storeLogo, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') ?>" class="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-200 shrink-0">
+                    <img src="<?= h(resolveStoreLogo($storeLogo, $basePath ?? '')) ?>" alt="<?= htmlspecialchars($storeName, ENT_QUOTES, 'UTF-8') ?>" class="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-xl shadow-sm group-hover:scale-105 transition-transform duration-200 shrink-0">
                 <?php else: ?>
                     <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-teal-700 to-cyan-500 flex items-center justify-center text-white font-serif font-black text-xs sm:text-sm shadow-sm group-hover:scale-105 transition-transform duration-200 shrink-0">
                         MJ

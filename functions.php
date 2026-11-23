@@ -90,6 +90,11 @@ if (!function_exists('updateStoreSettings')) {
      */
     function updateStoreSettings(PDO $pdo, array $data): bool {
         try {
+            // Pastikan kolom logo bertipe MEDIUMTEXT agar dapat menyimpan Base64 Data URI
+            try {
+                $pdo->exec("ALTER TABLE store_settings MODIFY COLUMN logo MEDIUMTEXT NULL");
+            } catch (Throwable $ignore) {}
+
             // Pastikan baris id=1 ada
             $check = (int)$pdo->query("SELECT COUNT(*) FROM store_settings WHERE id = 1")->fetchColumn();
             if ($check === 0) {
@@ -127,6 +132,139 @@ if (!function_exists('updateStoreSettings')) {
             return false;
         }
     }
+}
+
+/**
+ * Pastikan kolom gambar pada tabel rackets bertipe MEDIUMTEXT
+ */
+function ensureImageColumnMediumText(PDO $pdo): void {
+    static $altered = false;
+    if ($altered) return;
+    $altered = true;
+    try {
+        $pdo->exec("ALTER TABLE rackets MODIFY COLUMN image MEDIUMTEXT NULL");
+        $cols = $pdo->query("SHOW COLUMNS FROM rackets LIKE 'gambar'")->fetchAll();
+        if (!empty($cols)) {
+            $pdo->exec("ALTER TABLE rackets MODIFY COLUMN gambar MEDIUMTEXT NULL");
+        }
+    } catch (Throwable $e) {
+        error_log("[DB ALTER NOTICE] " . $e->getMessage());
+    }
+    try {
+        $cols = $pdo->query("SHOW COLUMNS FROM store_settings LIKE 'logo'")->fetchAll();
+        if (!empty($cols)) {
+            $pdo->exec("ALTER TABLE store_settings MODIFY COLUMN logo MEDIUMTEXT NULL");
+        }
+    } catch (Throwable $e) {
+        error_log("[DB ALTER NOTICE store_settings] " . $e->getMessage());
+    }
+}
+
+/**
+ * Kompres dan resize gambar menggunakan PHP GD (maksimal lebar 800px proporsional, JPEG kualitas 75).
+ * Mendukung format input PNG, JPG, JPEG, WEBP.
+ *
+ * @param string $filePath Path ke file fisik temporary atau gambar
+ * @param int $maxWidth Lebar maksimal gambar dalam pixel (default 800)
+ * @param int $quality Kualitas kompresi JPEG (default 75)
+ * @return array ['success' => bool, 'binary' => string, 'base64' => string, 'error' => ?string]
+ */
+function processAndCompressImage(string $filePath, int $maxWidth = 800, int $quality = 75): array {
+    if (!file_exists($filePath) || !is_readable($filePath)) {
+        return ['success' => false, 'binary' => '', 'base64' => '', 'error' => 'Berkas gambar tidak ditemukan atau tidak dapat dibaca.'];
+    }
+
+    $raw = @file_get_contents($filePath);
+    if ($raw === false || strlen($raw) === 0) {
+        return ['success' => false, 'binary' => '', 'base64' => '', 'error' => 'Berkas gambar kosong atau gagal dibaca.'];
+    }
+
+    if (!extension_loaded('gd') || !function_exists('imagecreatefromstring')) {
+        $mime = 'image/jpeg';
+        if (function_exists('mime_content_type')) {
+            $detected = @mime_content_type($filePath);
+            if ($detected) $mime = $detected;
+        }
+        return [
+            'success' => true,
+            'binary'  => $raw,
+            'base64'  => 'data:' . $mime . ';base64,' . base64_encode($raw),
+            'error'   => null
+        ];
+    }
+
+    $srcImg = @imagecreatefromstring($raw);
+    if (!$srcImg) {
+        return ['success' => false, 'binary' => '', 'base64' => '', 'error' => 'Format gambar tidak valid atau tidak didukung oleh GD.'];
+    }
+
+    $origWidth  = imagesx($srcImg);
+    $origHeight = imagesy($srcImg);
+
+    if ($origWidth > $maxWidth && $maxWidth > 0) {
+        $newWidth  = $maxWidth;
+        $newHeight = (int)round(($origHeight / $origWidth) * $maxWidth);
+    } else {
+        $newWidth  = $origWidth;
+        $newHeight = $origHeight;
+    }
+
+    $destImg = imagecreatetruecolor($newWidth, $newHeight);
+
+    // Latar belakang putih mencegah artifak hitam pada format transparan
+    $white = imagecolorallocate($destImg, 255, 255, 255);
+    imagefilledrectangle($destImg, 0, 0, $newWidth, $newHeight, $white);
+
+    imagecopyresampled($destImg, $srcImg, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+
+    ob_start();
+    imagejpeg($destImg, null, $quality);
+    $jpegBinary = ob_get_clean();
+
+    imagedestroy($srcImg);
+    imagedestroy($destImg);
+
+    if (empty($jpegBinary)) {
+        return ['success' => false, 'binary' => '', 'base64' => '', 'error' => 'Gagal mengompresi gambar ke format JPEG.'];
+    }
+
+    return [
+        'success' => true,
+        'binary'  => $jpegBinary,
+        'base64'  => 'data:image/jpeg;base64,' . base64_encode($jpegBinary),
+        'error'   => null
+    ];
+}
+
+/**
+ * Resolusi URL atau Data URI untuk gambar raket / media.
+ * Jika diawali data:image/, http://, atau https://, tampilkan langsung di src.
+ * Jika berupa nama file biasa (20 raket lama), arahkan ke path folder upload semula.
+ */
+function resolveRacketImage(?string $path, string $defaultPrefix = 'admin/uploads/'): string {
+    if (empty($path)) {
+        return 'assets/images/fallback-racket.svg';
+    }
+    if (str_starts_with($path, 'data:') || str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+    if (str_starts_with($path, 'admin/uploads/') || str_starts_with($path, 'assets/') || str_starts_with($path, 'uploads/')) {
+        return $path;
+    }
+    return rtrim($defaultPrefix, '/') . '/' . ltrim($path, '/');
+}
+
+/**
+ * Resolusi URL atau Data URI untuk logo toko.
+ */
+function resolveStoreLogo(?string $logo, string $prefix = ''): string {
+    if (empty($logo)) {
+        return '';
+    }
+    if (str_starts_with($logo, 'data:') || str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+        return $logo;
+    }
+    return $prefix . ltrim($logo, '/');
 }
 
 /* ============================================================

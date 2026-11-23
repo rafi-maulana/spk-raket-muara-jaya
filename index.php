@@ -412,10 +412,10 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                         <!-- Winner Racket Image / PDF Frame (Tinggi Tetap h-[130px] Anti-Ruang Kosong) -->
                         <?php 
                         $wRawGbr = !empty($winnerRacket['gambar']) ? $winnerRacket['gambar'] : ($winnerRacket['image'] ?? '');
-                        $wIsPdf  = !empty($wRawGbr) && str_ends_with(strtolower($wRawGbr), '.pdf');
+                        $wIsPdf  = !empty($wRawGbr) && (str_ends_with(strtolower($wRawGbr), '.pdf') || str_starts_with($wRawGbr, 'data:application/pdf'));
                         $wImgSrc = '';
                         if (!empty($wRawGbr) && !$wIsPdf) {
-                            if (str_starts_with($wRawGbr, 'admin/uploads/') || str_starts_with($wRawGbr, 'assets/')) {
+                            if (str_starts_with($wRawGbr, 'data:image/') || str_starts_with($wRawGbr, 'http://') || str_starts_with($wRawGbr, 'https://') || str_starts_with($wRawGbr, 'admin/uploads/') || str_starts_with($wRawGbr, 'assets/')) {
                                 $wImgSrc = $wRawGbr;
                             } else {
                                 $wImgSrc = 'admin/uploads/' . ltrim($wRawGbr, '/');
@@ -713,10 +713,10 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                         <!-- Racket Image / PDF Spec Document (Dinamis dari admin/uploads & Fallback) -->
                         <?php 
                         $rRawGbr = !empty($r['gambar']) ? $r['gambar'] : ($r['image'] ?? '');
-                        $rIsPdf  = !empty($rRawGbr) && str_ends_with(strtolower($rRawGbr), '.pdf');
+                        $rIsPdf  = !empty($rRawGbr) && (str_ends_with(strtolower($rRawGbr), '.pdf') || str_starts_with($rRawGbr, 'data:application/pdf'));
                         $rImgSrc = '';
                         if (!empty($rRawGbr) && !$rIsPdf) {
-                            if (str_starts_with($rRawGbr, 'admin/uploads/') || str_starts_with($rRawGbr, 'assets/')) {
+                            if (str_starts_with($rRawGbr, 'data:image/') || str_starts_with($rRawGbr, 'http://') || str_starts_with($rRawGbr, 'https://') || str_starts_with($rRawGbr, 'admin/uploads/') || str_starts_with($rRawGbr, 'assets/')) {
                                 $rImgSrc = $rRawGbr;
                             } else {
                                 $rImgSrc = 'admin/uploads/' . ltrim($rRawGbr, '/');

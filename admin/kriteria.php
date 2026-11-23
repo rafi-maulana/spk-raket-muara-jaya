@@ -246,7 +246,7 @@ $isValid      = abs($currentTotal - 1.0) <= 0.001;
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-3">
                     <?php if (!empty($storeSettings['logo'])): ?>
-                        <img src="../<?= h($storeSettings['logo']) ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
+                        <img src="<?= h(resolveStoreLogo($storeSettings['logo'], '../')) ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg">
                     <?php else: ?>
                         <div class="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-serif font-black text-xs text-teal-600 dark:text-cyan-400">
                             MJ

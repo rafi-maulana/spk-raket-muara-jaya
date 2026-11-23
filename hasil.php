@@ -382,10 +382,10 @@ if (str_starts_with($cleanWa, '0')) {
                     $rkRank   = $item['rank'];
                     $rkScore  = $item['score'];
                     $rRawGbr  = !empty($rkt['gambar']) ? $rkt['gambar'] : ($rkt['image'] ?? '');
-                    $rIsPdf   = !empty($rRawGbr) && str_ends_with(strtolower($rRawGbr), '.pdf');
+                    $rIsPdf   = !empty($rRawGbr) && (str_ends_with(strtolower($rRawGbr), '.pdf') || str_starts_with($rRawGbr, 'data:application/pdf'));
                     $rImgSrc  = '';
                     if (!empty($rRawGbr) && !$rIsPdf) {
-                        if (str_starts_with($rRawGbr, 'admin/uploads/') || str_starts_with($rRawGbr, 'assets/') || str_starts_with($rRawGbr, 'http')) {
+                        if (str_starts_with($rRawGbr, 'data:image/') || str_starts_with($rRawGbr, 'http://') || str_starts_with($rRawGbr, 'https://') || str_starts_with($rRawGbr, 'admin/uploads/') || str_starts_with($rRawGbr, 'assets/')) {
                             $rImgSrc = $rRawGbr;
                         } else {
                             $rImgSrc = 'admin/uploads/' . ltrim($rRawGbr, '/');
@@ -560,10 +560,10 @@ if (str_starts_with($cleanWa, '0')) {
                                     $rkt = $saw['rackets'][$rid]['racket'];
                                     $isTop = $rankData['rank'] === 1;
                                     $tRawGbr = !empty($rkt['gambar']) ? $rkt['gambar'] : ($rkt['image'] ?? '');
-                                    $tIsPdf  = !empty($tRawGbr) && str_ends_with(strtolower($tRawGbr), '.pdf');
+                                    $tIsPdf  = !empty($tRawGbr) && (str_ends_with(strtolower($tRawGbr), '.pdf') || str_starts_with($tRawGbr, 'data:application/pdf'));
                                     $tImgSrc = '';
                                     if (!empty($tRawGbr) && !$tIsPdf) {
-                                        if (str_starts_with($tRawGbr, 'admin/uploads/') || str_starts_with($tRawGbr, 'assets/') || str_starts_with($tRawGbr, 'http')) {
+                                        if (str_starts_with($tRawGbr, 'data:image/') || str_starts_with($tRawGbr, 'http://') || str_starts_with($tRawGbr, 'https://') || str_starts_with($tRawGbr, 'admin/uploads/') || str_starts_with($tRawGbr, 'assets/')) {
                                             $tImgSrc = $tRawGbr;
                                         } else {
                                             $tImgSrc = 'admin/uploads/' . ltrim($tRawGbr, '/');

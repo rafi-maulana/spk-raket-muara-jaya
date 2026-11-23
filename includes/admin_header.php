@@ -81,7 +81,7 @@ $adminUsername = htmlspecialchars($_SESSION['admin_username'] ?? 'Admin', ENT_QU
             <!-- Brand & Portal Badge (Tampil Utuh Tanpa Terpotong) -->
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 shrink">
                 <?php if (!empty($storeLogo)): ?>
-                    <img src="../<?= htmlspecialchars($storeLogo, ENT_QUOTES, 'UTF-8') ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg shrink-0">
+                    <img src="<?= h(resolveStoreLogo($storeLogo, '../')) ?>" alt="Logo" class="w-8 h-8 object-contain rounded-lg shrink-0">
                 <?php else: ?>
                     <div class="w-8 h-8 rounded-lg bg-slate-900 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-teal-600 dark:text-cyan-400 font-serif font-black text-xs shrink-0">
                         MJ

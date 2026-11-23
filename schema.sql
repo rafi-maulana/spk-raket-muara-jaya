@@ -65,7 +65,7 @@ CREATE TABLE `rackets` (
   `name` varchar(150) NOT NULL,
   `brand` varchar(100) NOT NULL,
   `price` decimal(12,2) NOT NULL,
-  `image` varchar(255) DEFAULT NULL,
+  `image` mediumtext DEFAULT NULL,
   `weight_spec` varchar(50) DEFAULT NULL,
   `balance_spec` varchar(50) DEFAULT NULL,
   `flex_spec` varchar(50) DEFAULT NULL,
@@ -298,7 +298,7 @@ CREATE TABLE `store_settings` (
   `phone` varchar(50) DEFAULT '+62 812-3456-7890',
   `whatsapp` varchar(50) DEFAULT '6281234567890',
   `email` varchar(100) DEFAULT 'info@muarajayasport.id',
-  `logo` varchar(255) DEFAULT '',
+  `logo` mediumtext DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
