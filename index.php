@@ -77,7 +77,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistem Pendukung Keputusan (SPK) Rekomendasi Raket Bulu Tangkis berbasis Algoritma SAW 8 Kriteria di <?= h($storeSettings['store_name']) ?>.">
+    <meta name="description" content="Sistem Pendukung Keputusan (SPK) Rekomendasi Raket Bulu Tangkis berbasis Algoritma SAW <?= $totalKriteria ?> Kriteria di <?= h($storeSettings['store_name']) ?>.">
     <title><?= h($storeSettings['store_name']) ?> — SPK Rekomendasi Raket Bulu Tangkis</title>
 
     <!-- Google Fonts: Playfair Display (Serif Headings) & Plus Jakarta Sans (Body Text) -->
@@ -238,7 +238,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                                 SPK SAW
                             </span>
                         </div>
-                        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide truncate"><?= h($storeSettings['store_tagline'] ?: 'Decision Support System • 8 Kriteria') ?></p>
+                        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide truncate"><?= h($storeSettings['store_tagline'] ?: 'Decision Support System • ' . $totalKriteria . ' Kriteria') ?></p>
                     </div>
                 </a>
 
@@ -346,7 +346,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                         <span class="w-2 h-2 rounded-full bg-teal-500 dark:bg-cyan-400 animate-pulse"></span>
                         <span class="font-bold text-teal-700 dark:text-cyan-300">Algoritma SAW Aktif</span>
                         <span class="text-slate-300 dark:text-slate-600">•</span>
-                        <span>8 Kriteria Penilaian Objektif</span>
+                        <span><?= $totalKriteria ?> Kriteria Penilaian Objektif</span>
                     </div>
 
                     <!-- Serif Heading with Responsive Clamp Scaling (Zero Layout Shift & Anti-Kepotong) -->
@@ -642,12 +642,21 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                         </div>
                     </div>
 
-                    <!-- Ringkasan Kompak Distribusi Pembobotan 8 Kriteria SAW (Collapsible Details) -->
+                    <!-- Ringkasan Kompak Distribusi Pembobotan Kriteria SAW (Collapsible Details) -->
+                    <?php
+                    $summaryParts = [];
+                    $totalWeightPct = 0;
+                    foreach ($criteriaList as $cItem) {
+                        $pct = round((float)$cItem['weight'] * 100, 1);
+                        $totalWeightPct += $pct;
+                        $summaryParts[] = h($cItem['code']) . ': ' . $pct . '%';
+                    }
+                    ?>
                     <details class="group rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs overflow-hidden transition-all">
                         <summary class="flex items-center justify-between px-3.5 py-2 cursor-pointer select-none font-bold text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-cyan-400">
                             <div class="flex items-center gap-2 text-[11px] min-w-0">
                                 <span class="font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 shrink-0">Distribusi Bobot SAW:</span>
-                                <span class="text-teal-700 dark:text-cyan-400 font-mono font-bold truncate">C1: 20% • C2-C3: 15% • C4-C8: 10% (Σ=100%)</span>
+                                <span class="text-teal-700 dark:text-cyan-400 font-mono font-bold truncate"><?= implode(' • ', array_slice($summaryParts, 0, 4)) . (count($summaryParts) > 4 ? ' • ...' : '') ?> (Σ=<?= round($totalWeightPct) ?>%)</span>
                             </div>
                             <div class="flex items-center gap-1 text-[10px] text-teal-600 dark:text-cyan-400 shrink-0 ml-2">
                                 <span>Detail</span>
@@ -655,14 +664,9 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                             </div>
                         </summary>
                         <div class="px-3.5 pb-2.5 pt-1 border-t border-slate-200/60 dark:border-slate-800/60 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] text-slate-600 dark:text-slate-400">
-                            <div>• C1 Harga: <strong class="text-slate-800 dark:text-slate-200">20% (Cost)</strong></div>
-                            <div>• C2 Berat: <strong class="text-slate-800 dark:text-slate-200">15% (Cost)</strong></div>
-                            <div>• C3 Flex: <strong class="text-slate-800 dark:text-slate-200">15% (Benefit)</strong></div>
-                            <div>• C4 Balance: <strong class="text-slate-800 dark:text-slate-200">10% (Benefit)</strong></div>
-                            <div>• C5 Tension: <strong class="text-slate-800 dark:text-slate-200">10% (Benefit)</strong></div>
-                            <div>• C6 Grip: <strong class="text-slate-800 dark:text-slate-200">10% (Benefit)</strong></div>
-                            <div>• C7 Durabilitas: <strong class="text-slate-800 dark:text-slate-200">10% (Benefit)</strong></div>
-                            <div>• C8 Manufaktur: <strong class="text-slate-800 dark:text-slate-200">10% (Benefit)</strong></div>
+                            <?php foreach ($criteriaList as $cItem): ?>
+                            <div>• <?= h($cItem['code']) ?> <?= h($cItem['name']) ?>: <strong class="text-slate-800 dark:text-slate-200"><?= round((float)$cItem['weight'] * 100, 1) ?>% (<?= ucfirst(h($cItem['type'])) ?>)</strong></div>
+                            <?php endforeach; ?>
                         </div>
                     </details>
 
@@ -700,7 +704,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                         Daftar Alternatif Penilaian
                     </h2>
                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        Menampilkan <?= $totalRaket ?> raket pilihan yang dinilai menggunakan 8 kriteria objektif SAW.
+                        Menampilkan <?= $totalRaket ?> raket pilihan yang dinilai menggunakan <?= $totalKriteria ?> kriteria objektif SAW.
                     </p>
                 </div>
             </div>
@@ -814,7 +818,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                     Transparansi Ilmiah
                 </span>
                 <h2 class="font-serif-heading text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white">
-                    8 Kriteria Penilaian Simple Additive Weighting
+                    <?= $totalKriteria ?> Kriteria Penilaian Simple Additive Weighting
                 </h2>
                 <p class="text-sm text-slate-600 dark:text-slate-400 mt-2">
                     Setiap kriteria memiliki bobot preferensi (W) dan formula normalisasi yang transparan.
@@ -930,7 +934,7 @@ $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && 
                 </div>
                 <div class="text-xs text-slate-500 dark:text-slate-400 text-center md:text-right">
                     <div>Kontak: <strong><?= h($storeSettings['whatsapp'] ?: $storeSettings['phone']) ?></strong> • Email: <strong><?= h($storeSettings['email']) ?></strong></div>
-                    <div class="mt-1">&copy; <?= date('Y') ?> <?= h($storeSettings['store_name']) ?>. Metode SAW 8 Kriteria & PDO Prepared Statements.</div>
+                    <div class="mt-1">&copy; <?= date('Y') ?> <?= h($storeSettings['store_name']) ?>. Metode SAW <?= $totalKriteria ?> Kriteria & PDO Prepared Statements.</div>
                 </div>
             </div>
         </div>

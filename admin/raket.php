@@ -581,7 +581,7 @@ $rackets = $pdo->query("
                     <?= $action === 'edit' ? 'Edit Data & Gambar Raket' : ($action === 'add' ? 'Tambah Raket Baru' : 'Kelola Master Data Raket') ?>
                 </h1>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                    Upload gambar/brosur asli (PNG, JPG, PDF) ke folder <code class="text-teal-600 dark:text-cyan-400">admin/uploads/</code> dan konfigurasikan nilai matriks SAW 8 kriteria.
+                    Upload gambar/brosur asli (PNG, JPG, PDF) ke folder <code class="text-teal-600 dark:text-cyan-400">admin/uploads/</code> dan konfigurasikan nilai matriks SAW <?= count($criteria) ?> kriteria.
                 </p>
             </div>
             <div>
@@ -723,12 +723,12 @@ $rackets = $pdo->query("
                 </div>
             </div>
 
-            <!-- Card 2: Nilai Matriks Keputusan SAW (C1 - C8) -->
+            <!-- Card 2: Nilai Matriks Keputusan SAW (<?= count($criteria) ?> Kriteria) -->
             <div class="bg-white dark:bg-[#131C2E] border border-slate-200 dark:border-cyan-500/20 rounded-2xl p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
                 <div class="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center justify-between">
                     <div>
                         <h2 class="font-serif text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <span>2. Nilai Matriks Keputusan SAW (8 Kriteria)</span>
+                            <span>2. Nilai Matriks Keputusan SAW (<?= count($criteria) ?> Kriteria)</span>
                         </h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Nilai skala 1–10 untuk evaluasi bobot SAW (C1 otomatis mengambil harga).</p>
                     </div>
@@ -854,7 +854,7 @@ $rackets = $pdo->query("
                             <!-- Skor Lengkap -->
                             <td class="py-3.5 px-4 text-center">
                                 <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-                                    <?= (int)$r['score_count'] ?> / 8 Kriteria
+                                    <?= (int)$r['score_count'] ?> / <?= count($criteria) ?> Kriteria
                                 </span>
                             </td>
 

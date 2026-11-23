@@ -138,7 +138,7 @@ $isAdmin       = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in'
                                 SPK SAW
                             </span>
                         </div>
-                        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide truncate">Metode & Kriteria SAW 8 Kriteria</p>
+                        <p class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium tracking-wide truncate">Metode & Kriteria SAW <?= count($criteriaList) ?> Kriteria</p>
                     </div>
                 </a>
 
@@ -208,7 +208,7 @@ $isAdmin       = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in'
                     1. Prinsip Keseimbangan Semua Aspek
                 </h3>
                 <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Setiap raket dievaluasi berdasarkan <strong>8 kriteria penting</strong> (Harga, Berat, Kelenturan Shaft, Titik Keseimbangan, Tarikan Senar, Grip, Daya Tahan, dan Kualitas Manufaktur). Tidak ada raket yang dinilai hanya dari nama merek semata.
+                    Setiap raket dievaluasi secara objektif dan komprehensif berdasarkan <strong><?= count($criteriaList) ?> kriteria penting</strong>. Tidak ada raket yang dinilai hanya dari nama merek semata.
                 </p>
             </div>
 
@@ -265,10 +265,10 @@ $isAdmin       = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in'
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                     <h3 class="font-serif-heading text-2xl font-bold text-slate-900 dark:text-white">
-                        Daftar 8 Kriteria Penilaian Objektif
+                        Daftar <?= count($criteriaList) ?> Kriteria Penilaian Objektif
                     </h3>
                     <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        Seluruh alternatif raket diuji secara setara menggunakan 8 parameter matematis berikut:
+                        Seluruh alternatif raket diuji secara setara menggunakan <?= count($criteriaList) ?> parameter matematis berikut:
                     </p>
                 </div>
                 <span class="text-[11px] text-slate-400 dark:text-slate-500 md:hidden font-medium">← Geser tabel ke samping →</span>

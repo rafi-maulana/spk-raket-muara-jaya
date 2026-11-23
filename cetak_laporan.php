@@ -49,8 +49,19 @@ if ($saw['success'] && !empty($saw['ranking'])) {
 
 $docNumber = 'MJS-REC/' . date('Ym') . '/' . str_pad((string)rand(1, 999), 3, '0', STR_PAD_LEFT);
 
-// Penataan Kota & Tanggal Cetak Dinamis (Bogor & Format Bahasa Indonesia Baku)
-$printCity         = 'Bogor';
+// Penataan Kota & Tanggal Cetak Dinamis (Berdasarkan Pengaturan Toko & Format Bahasa Indonesia Baku)
+$printCity = 'Bogor';
+if (!empty($storeSettings['address'])) {
+    if (stripos($storeSettings['address'], 'Jakarta') !== false) {
+        $printCity = 'Jakarta';
+    } elseif (stripos($storeSettings['address'], 'Bogor') !== false) {
+        $printCity = 'Bogor';
+    } elseif (stripos($storeSettings['address'], 'Bandung') !== false) {
+        $printCity = 'Bandung';
+    } elseif (stripos($storeSettings['address'], 'Surabaya') !== false) {
+        $printCity = 'Surabaya';
+    }
+}
 $printDate         = function_exists('formatTanggalIndonesia') ? formatTanggalIndonesia() : date('d F Y');
 $printLocationDate = "{$printCity}, {$printDate}";
 ?>

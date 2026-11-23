@@ -184,6 +184,15 @@ $totalRaket      = function_exists('getActiveRacketsCount') ? getActiveRacketsCo
 $totalKriteria   = (int) $pdo->query("SELECT COUNT(*) FROM criteria")->fetchColumn();
 $totalKonsultasi = (int) $pdo->query("SELECT COUNT(*) FROM consultation_log")->fetchColumn();
 
+// Rentang Kode Kriteria Dinamis (misal C1–C8)
+$criteriaCodes = [];
+try {
+    $criteriaCodes = $pdo->query("SELECT code FROM criteria ORDER BY id ASC")->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {}
+$firstCritCode  = !empty($criteriaCodes) ? reset($criteriaCodes) : 'C1';
+$lastCritCode   = !empty($criteriaCodes) ? end($criteriaCodes) : 'C' . $totalKriteria;
+$critRangeLabel = count($criteriaCodes) > 1 ? "{$firstCritCode}–{$lastCritCode} Objektif" : "{$firstCritCode} Objektif";
+
 // Validasi Bobot Kriteria
 $wv         = validateWeights($pdo);
 $totalBobot = $wv['total'];
@@ -395,7 +404,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                 <div>
                     <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Kriteria SAW</span>
                     <div class="text-xl sm:text-2xl font-serif font-black text-slate-900 dark:text-white leading-tight mt-0.5"><?= $totalKriteria ?></div>
-                    <span class="text-[10px] text-teal-600 dark:text-cyan-400 font-semibold block">C1–C8 Objektif</span>
+                    <span class="text-[10px] text-teal-600 dark:text-cyan-400 font-semibold block"><?= h($critRangeLabel) ?></span>
                 </div>
                 <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
@@ -583,7 +592,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                                     <div class="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
                                     </div>
-                                    <span>Preview Ranking SAW 8 Kriteria</span>
+                                    <span>Preview Ranking SAW <?= $totalKriteria ?> Kriteria</span>
                                 </h2>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Hasil peringkat descending berdasarkan nilai preferensi Vi.</p>
                             </div>

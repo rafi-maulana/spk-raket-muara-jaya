@@ -78,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $isAdmin = isset($_SESSION['admin']) || (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true);
+$totalKriteria = !empty($saw['criteria']) ? count($saw['criteria']) : (int)$pdo->query("SELECT COUNT(*) FROM criteria")->fetchColumn();
 
 // Format nomor WhatsApp toko standar internasional (62)
 $rawWa   = $storeSettings['whatsapp'] ?? '087706335584';
@@ -93,7 +94,7 @@ if (str_starts_with($cleanWa, '0')) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Hasil Rekomendasi Raket SAW 8 Kriteria — <?= h($storeSettings['store_name']) ?>">
+    <meta name="description" content="Hasil Rekomendasi Raket SAW <?= $totalKriteria ?> Kriteria — <?= h($storeSettings['store_name']) ?>">
     <title>Hasil Rekomendasi Raket — <?= h($storeSettings['store_name']) ?></title>
 
     <!-- Google Fonts: Playfair Display & Plus Jakarta Sans -->
@@ -214,7 +215,7 @@ if (str_starts_with($cleanWa, '0')) {
                     <?php endif; ?>
                     <div class="min-w-0">
                         <span class="font-serif-title font-bold text-sm sm:text-base lg:text-lg text-slate-900 dark:text-white block whitespace-nowrap overflow-hidden text-ellipsis"><?= h($storeSettings['store_name']) ?></span>
-                        <span class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate"><?= h($storeSettings['store_tagline'] ?: 'Hasil Rekomendasi SAW 8 Kriteria') ?></span>
+                        <span class="hidden sm:block text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate"><?= h($storeSettings['store_tagline'] ?: 'Hasil Rekomendasi SAW ' . $totalKriteria . ' Kriteria') ?></span>
                     </div>
                 </a>
 
@@ -852,7 +853,7 @@ if (str_starts_with($cleanWa, '0')) {
                 </div>
                 <div class="text-xs text-slate-500 dark:text-slate-400 text-center md:text-right">
                     <div>Kontak: <strong><?= h($storeSettings['whatsapp'] ?: $storeSettings['phone']) ?></strong> • Email: <strong><?= h($storeSettings['email']) ?></strong></div>
-                    <div class="mt-1">&copy; <?= date('Y') ?> <?= h($storeSettings['store_name']) ?>. Metode SAW 8 Kriteria.</div>
+                    <div class="mt-1">&copy; <?= date('Y') ?> <?= h($storeSettings['store_name']) ?>. Metode SAW <?= $totalKriteria ?> Kriteria.</div>
                 </div>
             </div>
         </div>

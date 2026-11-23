@@ -662,6 +662,14 @@ function generateDynamicWeights(?string $playingStyle, array $criteria, ?string 
         }
     }
 
+    // Pastikan seluruh kriteria yang ada di database memiliki bobot awal
+    foreach ($criteria as $c) {
+        $cid = (int)$c['id'];
+        if (!isset($weights[$cid])) {
+            $weights[$cid] = (float)$c['weight'];
+        }
+    }
+
     // Normalisasi agar total akumulasi tepat 1.0000
     $total = array_sum($weights);
     if ($total > 0) {
@@ -933,7 +941,7 @@ function runSAW(
 
     return [
         'success'         => true,
-        'message'         => 'Kalkulasi SAW 8 kriteria berhasil diproses secara dinamis.',
+        'message'         => 'Kalkulasi SAW ' . count($criteria) . ' kriteria berhasil diproses secara dinamis.',
         'isFallback'      => $isFallback,
         'fallbackMsg'     => $fallbackMsg,
         'criteria'        => $criteria,
