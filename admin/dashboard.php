@@ -675,7 +675,7 @@ if ($sawPreview['success'] && !empty($sawPreview['ranking'])) {
                                     </div>
                                 </div>
                                 <div class="text-right text-[11px] text-slate-400 flex-shrink-0">
-                                    <?= date('d/m/Y H:i', strtotime($log['created_at'])) ?>
+                                    <?= date('d/m/Y H:i', strtotime($log['created_at'])) ?> WIB
                                 </div>
                             </div>
                             <?php endforeach; ?>

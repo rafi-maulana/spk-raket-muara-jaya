@@ -2,6 +2,7 @@
 if (ob_get_level() === 0) {
     ob_start();
 }
+date_default_timezone_set('Asia/Jakarta');
 /**
  * api/index.php — Front Controller Router untuk Vercel Serverless
  * SPK Pemilihan Raket Bulu Tangkis Metode SAW — Toko Muara Jaya Sport

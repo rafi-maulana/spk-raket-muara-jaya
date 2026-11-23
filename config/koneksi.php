@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta');
 /**
  * ============================================================
  *  config/koneksi.php
@@ -114,6 +115,13 @@ try {
     }
     $conn = $pdo; // Alias kompatibilitas
 
+    // Set zona waktu sesi database ke WIB (UTC+7) untuk TiDB Cloud dan MySQL
+    try {
+        $pdo->exec("SET time_zone = '+07:00';");
+    } catch (Throwable $tzErr) {
+        // Fallback aman jika server database membatasi izin time_zone
+    }
+
 } catch (PDOException $e) {
     error_log("Database connection failure: " . $e->getMessage());
     $errMsg = $e->getMessage();
@@ -166,6 +174,9 @@ if (!function_exists('getMySQLi')) {
             $flags = 0;
         }
         @mysqli_real_connect($conn, DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT, NULL, $flags);
+        try {
+            @mysqli_query($conn, "SET time_zone = '+07:00'");
+        } catch (Throwable $tzErr) {}
         return $conn;
     }
 }

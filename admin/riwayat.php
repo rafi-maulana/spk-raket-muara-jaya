@@ -364,12 +364,12 @@ $totalLogs = (int)$pdo->query("SELECT COUNT(*) FROM consultation_log")->fetchCol
                                     $hasScore   = false;
                                 }
 
-                                // Format tanggal konsultasi
+                                // Format tanggal konsultasi (WIB)
                                 $rawTime = $l['created_at'] ?? null;
                                 if ($rawTime) {
                                     $formattedTime = function_exists('formatTanggalIndonesia') 
                                         ? formatTanggalIndonesia($rawTime, true) 
-                                        : date('d M Y, H:i', strtotime($rawTime));
+                                        : (date('d M Y, H:i', strtotime($rawTime)) . ' WIB');
                                 } else {
                                     $formattedTime = '—';
                                 }

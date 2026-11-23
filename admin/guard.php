@@ -2,6 +2,7 @@
 if (ob_get_level() === 0) {
     ob_start();
 }
+date_default_timezone_set('Asia/Jakarta');
 /**
  * admin/guard.php — Pengaman Terpusat Semua Halaman Admin
  * ─────────────────────────────────────────────────────────────

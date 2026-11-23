@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $winnerRacket = $saw['rackets'][$topId]['racket'];
         $winnerScore  = (float)$saw['ranking'][$topId]['score'];
 
-        // Catat ke log konsultasi
+        // Catat ke log konsultasi dengan waktu nyata Indonesia (WIB)
         logConsultation($pdo, [
             'visitor_name'      => $visitorName,
             'max_budget'        => $maxBudget,
@@ -53,6 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'flexibility_pref'  => $flexPref ?: null,
             'result_top_racket' => $winnerRacket['name'],
             'result_top_score'  => $winnerScore,
+            'created_at'        => date('Y-m-d H:i:s'),
         ]);
 
         // Simpan ke session untuk modul cetak laporan
@@ -61,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'max_budget'   => $maxBudget,
             'playing_style'=> $stylePref,
             'flex_pref'    => $flexPref,
-            'time'         => date('d F Y, H:i'),
+            'time'         => function_exists('formatTanggalIndonesia') ? formatTanggalIndonesia(null, true) : (date('d F Y, H:i') . ' WIB'),
             'saw'          => $saw,
             'winner'       => $winnerRacket,
             'winner_score' => $winnerScore,

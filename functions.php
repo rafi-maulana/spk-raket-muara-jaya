@@ -2,6 +2,7 @@
 if (ob_get_level() === 0) {
     ob_start();
 }
+date_default_timezone_set('Asia/Jakarta');
 /**
  * ============================================================
  *  functions.php — Backend SAW Engine & Core Business Logic
@@ -1059,20 +1060,43 @@ function formatSAW(float $value, int $decimals = 6): string
 function logConsultation(PDO $pdo, array $data): bool
 {
     try {
-        $stmt = $pdo->prepare("
-            INSERT INTO consultation_log
-            (visitor_name, max_budget, playing_style, flexibility_pref, result_top_racket, result_top_score)
-            VALUES
-            (:visitor_name, :max_budget, :playing_style, :flexibility_pref, :result_top_racket, :result_top_score)
-        ");
-        return $stmt->execute([
-            ':visitor_name'     => $data['visitor_name']     ?? 'Tamu',
-            ':max_budget'       => $data['max_budget']       ?? null,
-            ':playing_style'    => $data['playing_style']    ?? null,
-            ':flexibility_pref' => $data['flexibility_pref'] ?? null,
-            ':result_top_racket'=> $data['result_top_racket']?? null,
-            ':result_top_score' => $data['result_top_score'] ?? null,
-        ]);
+        $createdAt = !empty($data['created_at']) ? $data['created_at'] : date('Y-m-d H:i:s');
+        $score     = $data['result_top_score'] ?? ($data['result_score'] ?? null);
+
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO consultation_log
+                (visitor_name, max_budget, playing_style, flexibility_pref, result_top_racket, result_top_score, created_at)
+                VALUES
+                (:visitor_name, :max_budget, :playing_style, :flexibility_pref, :result_top_racket, :result_top_score, :created_at)
+            ");
+            return $stmt->execute([
+                ':visitor_name'     => $data['visitor_name']     ?? 'Tamu',
+                ':max_budget'       => $data['max_budget']       ?? null,
+                ':playing_style'    => $data['playing_style']    ?? null,
+                ':flexibility_pref' => $data['flexibility_pref'] ?? null,
+                ':result_top_racket'=> $data['result_top_racket']?? null,
+                ':result_top_score' => $score,
+                ':created_at'       => $createdAt,
+            ]);
+        } catch (PDOException $e1) {
+            // Fallback jika nama kolom pada tabel adalah result_score
+            $stmt = $pdo->prepare("
+                INSERT INTO consultation_log
+                (visitor_name, max_budget, playing_style, flexibility_pref, result_top_racket, result_score, created_at)
+                VALUES
+                (:visitor_name, :max_budget, :playing_style, :flexibility_pref, :result_top_racket, :result_score, :created_at)
+            ");
+            return $stmt->execute([
+                ':visitor_name'     => $data['visitor_name']     ?? 'Tamu',
+                ':max_budget'       => $data['max_budget']       ?? null,
+                ':playing_style'    => $data['playing_style']    ?? null,
+                ':flexibility_pref' => $data['flexibility_pref'] ?? null,
+                ':result_top_racket'=> $data['result_top_racket']?? null,
+                ':result_score'     => $score,
+                ':created_at'       => $createdAt,
+            ]);
+        }
     } catch (PDOException $e) {
         error_log("Gagal simpan log konsultasi: " . $e->getMessage());
         return false;
