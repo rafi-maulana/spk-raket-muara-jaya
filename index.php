@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  index.php — Landing Page & Konsultasi SPK Rekomendasi Raket

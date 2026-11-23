@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  includes/admin_header.php — Admin Portal Header & Sticky Glass Navbar
@@ -159,7 +162,9 @@ if (!empty($_SESSION['flash'])) {
     }
 }
 if (isset($_COOKIE['mjs_flash_toast'])) {
-    setcookie('mjs_flash_toast', '', time() - 3600, '/');
+    if (!headers_sent()) {
+        @setcookie('mjs_flash_toast', '', time() - 3600, '/');
+    }
     unset($_COOKIE['mjs_flash_toast']);
 }
 

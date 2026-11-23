@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * admin/guard.php — Pengaman Terpusat Semua Halaman Admin
  * ─────────────────────────────────────────────────────────────
@@ -75,8 +78,12 @@ if (!$_isLoggedIn) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
 
-    // Redirect ke login dengan parameter reason
-    header('Location: ../login.php?reason=unauthorized');
+    // Redirect ke login dengan parameter reason (Aman headers_sent)
+    if (!headers_sent()) {
+        header('Location: ../login.php?reason=unauthorized');
+        exit();
+    }
+    echo '<script>window.location.href="../login.php?reason=unauthorized";</script>';
     exit();
 }
 

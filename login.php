@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  login.php — Admin Login Portal | Muara Jaya Sport SPK
@@ -18,7 +21,11 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // Redirect jika sudah login
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-    header('Location: admin/dashboard.php');
+    if (!headers_sent()) {
+        header('Location: admin/dashboard.php');
+        exit;
+    }
+    echo '<script>window.location.href="admin/dashboard.php";</script>';
     exit;
 }
 

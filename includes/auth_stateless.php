@@ -34,13 +34,15 @@ if (!function_exists('createAdminAuthCookie')) {
         $secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 
-        setcookie('mjs_admin_token', $token, [
-            'expires'  => $expire,
-            'path'     => '/',
-            'secure'   => $secure,
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
+        if (!headers_sent()) {
+            @setcookie('mjs_admin_token', $token, [
+                'expires'  => $expire,
+                'path'     => '/',
+                'secure'   => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        }
         $_COOKIE['mjs_admin_token'] = $token;
     }
 }
@@ -53,13 +55,15 @@ if (!function_exists('clearAdminAuthCookie')) {
         $secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
                || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
 
-        setcookie('mjs_admin_token', '', [
-            'expires'  => time() - 3600,
-            'path'     => '/',
-            'secure'   => $secure,
-            'httponly' => true,
-            'samesite' => 'Lax'
-        ]);
+        if (!headers_sent()) {
+            @setcookie('mjs_admin_token', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'secure'   => $secure,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+        }
         unset($_COOKIE['mjs_admin_token']);
     }
 }

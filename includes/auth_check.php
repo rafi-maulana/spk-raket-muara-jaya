@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * includes/auth_check.php
  * Session Guard — wajib di-include di semua halaman /admin/
@@ -24,7 +27,11 @@ if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== tru
     $requestedPage = basename($_SERVER['SCRIPT_NAME']);
     $_SESSION['redirect_after_login'] = 'admin/' . $requestedPage;
 
-    // Redirect ke login dengan keterangan alasan
-    header('Location: ../login.php?reason=unauthorized');
+    // Redirect ke login dengan keterangan alasan (Aman headers_sent)
+    if (!headers_sent()) {
+        header('Location: ../login.php?reason=unauthorized');
+        exit;
+    }
+    echo '<script>window.location.href="../login.php?reason=unauthorized";</script>';
     exit;
 }

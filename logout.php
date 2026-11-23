@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 // ============================================================
 //  logout.php — Secure Logout | Muara Jaya Sport SPK
 //  Security: Anti-cache headers, full session destruction,
@@ -65,5 +68,9 @@ clearAdminAuthCookie();
 // -----------------------------------------------------------
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
-header('Location: login.php?msg=logout_success');
+if (!headers_sent()) {
+    header('Location: login.php?msg=logout_success');
+    exit;
+}
+echo '<script>window.location.href="login.php?msg=logout_success";</script>';
 exit;

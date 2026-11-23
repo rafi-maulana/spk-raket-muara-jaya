@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  admin/kriteria.php — Manajemen Bobot Kriteria SAW
@@ -73,21 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_weights'])) {
                     }
                     $pdo->commit();
                     setFlash('success', "Bobot kriteria berhasil disimpan! Total bobot = " . number_format($total, 4) . " (Tepat 100%).", 'Bobot Disimpan');
-                    header('Location: kriteria.php');
-                    exit;
+                    safeRedirect('kriteria.php');
                 } catch (PDOException $e) {
                     if ($pdo->inTransaction()) $pdo->rollBack();
                     setFlash('error', 'Database error: ' . $e->getMessage(), 'Gagal Menyimpan Bobot');
-                    header('Location: kriteria.php');
-                    exit;
+                    safeRedirect('kriteria.php');
                 }
             }
         }
     }
     if (!empty($error)) {
         setFlash('error', $error, 'Validasi Bobot Ditolak');
-        header('Location: kriteria.php');
-        exit;
+        safeRedirect('kriteria.php');
     }
 }
 
@@ -112,8 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_criteria'])) {
                 $pdo->prepare("INSERT INTO criteria (code, name, weight, type) VALUES (:c, :n, :w, :t)")
                     ->execute([':c' => $newCode, ':n' => $newName, ':w' => round($newWeight, 4), ':t' => $newType]);
                 setFlash('success', "Kriteria {$newCode} berhasil ditambahkan! Silakan sesuaikan bobot kriteria lainnya agar total bernilai 1.00 (100%).", 'Kriteria Ditambahkan');
-                header('Location: kriteria.php');
-                exit;
+                safeRedirect('kriteria.php');
             }
         } catch (PDOException $e) {
             $error = 'Gagal menambah kriteria: ' . $e->getMessage();
@@ -121,8 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_criteria'])) {
     }
     if (!empty($error)) {
         setFlash('error', $error, 'Gagal Menambah Kriteria');
-        header('Location: kriteria.php');
-        exit;
+        safeRedirect('kriteria.php');
     }
 }
 
@@ -135,12 +133,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['delete']) && ctype_digi
         $delCode = $delName->fetchColumn() ?: "#{$delId}";
         $pdo->prepare("DELETE FROM criteria WHERE id = :id")->execute([':id' => $delId]);
         setFlash('success', "Kriteria {$delCode} berhasil dihapus.", 'Kriteria Dihapus');
-        header('Location: kriteria.php');
-        exit;
+        safeRedirect('kriteria.php');
     } catch (PDOException $e) {
         setFlash('error', 'Gagal menghapus kriteria: ' . $e->getMessage(), 'Gagal Menghapus Kriteria');
-        header('Location: kriteria.php');
-        exit;
+        safeRedirect('kriteria.php');
     }
 }
 

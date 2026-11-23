@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  admin/raket.php — CRUD Kelola Raket & Spesifikasi SAW 8 Kriteria
@@ -83,13 +86,11 @@ if ($action === 'delete' && $editId > 0) {
         }
 
         setFlash('success', 'Raket berhasil dihapus beserta seluruh skor dan dokumennya.', 'Raket Dihapus');
-        header('Location: raket.php');
-        exit;
+        safeRedirect('raket.php');
     } catch (PDOException $e) {
         error_log('[DELETE RAKET ERROR] ' . $e->getMessage());
         setFlash('error', 'Gagal menghapus data raket: ' . $e->getMessage(), 'Gagal Menghapus');
-        header('Location: raket.php');
-        exit;
+        safeRedirect('raket.php');
     }
 }
 
@@ -361,15 +362,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_raket'])
                 $flashTitle = ($action === 'add') ? 'Raket Ditambahkan' : 'Data Raket Diperbarui';
                 $flashMsg   = ($action === 'add') ? 'Data raket baru berhasil ditambahkan ke katalog.' : 'Data raket dan dokumen spesifikasi berhasil diperbarui.';
                 setFlash('success', $flashMsg, $flashTitle);
-                header('Location: raket.php');
-                exit;
+                safeRedirect('raket.php');
 
             } catch (PDOException $e) {
                 $pdo->rollBack();
                 error_log('[SAVE RAKET ERROR] ' . $e->getMessage());
                 setFlash('error', 'Gagal menyimpan data raket ke database: ' . $e->getMessage(), 'Gagal Menyimpan Raket');
-                header('Location: raket.php' . ($action === 'edit' ? '?action=edit&id=' . $editId : '?action=add'));
-                exit;
+                safeRedirect('raket.php' . ($action === 'edit' ? '?action=edit&id=' . $editId : '?action=add'));
             }
         }
     }

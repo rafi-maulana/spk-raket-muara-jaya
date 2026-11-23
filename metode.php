@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  metode.php — Penjelasan Metode SAW Secara Bersih & Bernarasi

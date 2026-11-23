@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  functions.php — Backend SAW Engine & Core Business Logic
@@ -1255,16 +1258,34 @@ function setFlash(string $type, string $message, ?string $title = null): void
     $_SESSION['flash_message'] = $flashData;
 
     // Simpan juga ke cookie sementara (auto-clear setelah dibaca) untuk kompatibilitas Vercel Serverless
-    $secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
-           || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
-    setcookie('mjs_flash_toast', json_encode($flashData), [
-        'expires'  => time() + 120,
-        'path'     => '/',
-        'secure'   => $secure,
-        'httponly' => false,
-        'samesite' => 'Lax'
-    ]);
+    if (!headers_sent()) {
+        $secure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') 
+               || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        @setcookie('mjs_flash_toast', json_encode($flashData), [
+            'expires'  => time() + 120,
+            'path'     => '/',
+            'secure'   => $secure,
+            'httponly' => false,
+            'samesite' => 'Lax'
+        ]);
+    }
     $_COOKIE['mjs_flash_toast'] = json_encode($flashData);
+}
+
+/**
+ * Redirect aman dengan pengecekan headers_sent() dan fallback JavaScript
+ */
+if (!function_exists('safeRedirect')) {
+    function safeRedirect(string $url): void
+    {
+        if (!headers_sent()) {
+            header('Location: ' . $url);
+            exit;
+        }
+        echo '<script>window.location.href=' . json_encode($url) . ';</script>';
+        echo '<noscript><meta http-equiv="refresh" content="0;url=' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"></noscript>';
+        exit;
+    }
 }
 
 /**
@@ -1304,15 +1325,17 @@ function getFlash(): ?array
         }
     }
 
-    // Auto-clear cookie flash setelah dibaca
+    // Auto-clear cookie flash setelah dibaca (aman tanpa memicu warning headers already sent)
     if (isset($_COOKIE['mjs_flash_toast'])) {
-        setcookie('mjs_flash_toast', '', [
-            'expires'  => time() - 3600,
-            'path'     => '/',
-            'secure'   => false,
-            'httponly' => false,
-            'samesite' => 'Lax'
-        ]);
+        if (!headers_sent()) {
+            @setcookie('mjs_flash_toast', '', [
+                'expires'  => time() - 3600,
+                'path'     => '/',
+                'secure'   => false,
+                'httponly' => false,
+                'samesite' => 'Lax'
+            ]);
+        }
         unset($_COOKIE['mjs_flash_toast']);
     }
 

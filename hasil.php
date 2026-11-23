@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  hasil.php — Hasil Rekomendasi SAW 8 Kriteria
@@ -18,8 +21,7 @@ $storeSettings = getStoreSettings($pdo);
 
 // Validasi request method POST (atau ambil dari session jika direct print/back)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST' && empty($_SESSION['last_result'])) {
-    header('Location: index.php#konsultasi');
-    exit;
+    safeRedirect('index.php#konsultasi');
 }
 
 // Tangkap input dari form index.php

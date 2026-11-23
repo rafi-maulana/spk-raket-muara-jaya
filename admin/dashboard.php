@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  admin/dashboard.php — Dashboard Administrator & Pengaturan Toko
@@ -151,20 +154,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['save_store_se
 
             if ($successUpdate) {
                 setFlash('success', 'Identitas toko berhasil disimpan dan langsung diterapkan ke seluruh sistem!', 'Identitas Toko Disimpan');
-                header('Location: dashboard.php#pengaturan-toko');
-                exit;
+                safeRedirect('dashboard.php#pengaturan-toko');
             } else {
                 setFlash('error', 'Gagal memperbarui data identitas toko di database.', 'Gagal Memperbarui');
-                header('Location: dashboard.php#pengaturan-toko');
-                exit;
+                safeRedirect('dashboard.php#pengaturan-toko');
             }
         }
     }
 
     if (!empty($settingsError)) {
         setFlash('error', $settingsError, 'Validasi Gagal');
-        header('Location: dashboard.php#pengaturan-toko');
-        exit;
+        safeRedirect('dashboard.php#pengaturan-toko');
     }
 }
 

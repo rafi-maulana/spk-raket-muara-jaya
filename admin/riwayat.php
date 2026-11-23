@@ -1,4 +1,7 @@
 <?php
+if (ob_get_level() === 0) {
+    ob_start();
+}
 /**
  * ============================================================
  *  admin/riwayat.php — Riwayat Log Konsultasi Pengunjung
@@ -48,8 +51,7 @@ if (isset($_GET['delete']) && is_numeric($_GET['delete'])) {
         error_log('[DELETE LOG ERROR] ' . $e->getMessage());
         setFlash('error', 'Gagal menghapus log riwayat konsultasi: ' . $e->getMessage(), 'Gagal Menghapus');
     }
-    header('Location: riwayat.php');
-    exit;
+    safeRedirect('riwayat.php');
 }
 
 // ── PROSES HAPUS SELURUH LOG ───────────────────────────────────
@@ -61,8 +63,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['delete_all'])
         error_log('[TRUNCATE LOG ERROR] ' . $e->getMessage());
         setFlash('error', 'Gagal mengosongkan riwayat: ' . $e->getMessage(), 'Gagal Mengosongkan');
     }
-    header('Location: riwayat.php');
-    exit;
+    safeRedirect('riwayat.php');
 }
 
 // ── FILTER TANGGAL & PENCARIAN ─────────────────────────────────
